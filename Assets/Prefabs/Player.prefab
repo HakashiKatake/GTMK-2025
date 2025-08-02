@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6917439115541580503}
   - component: {fileID: 5979284529187837717}
   - component: {fileID: 2816491313769640170}
+  - component: {fileID: 350934224359836537}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -181,6 +182,27 @@ MonoBehaviour:
   pelletSpeed: 20
   fireCooldown: 0.5
   recoilForce: 27
+--- !u!95 &350934224359836537
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4462471977449816689}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e5b60a84d018d48a584a6a2f870f6da9, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5453360035235993090
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,7 +311,7 @@ SpriteRenderer:
   m_Sprite: {fileID: 352863754, guid: 125056c897684482db2bffc7a70f1292, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 1
-  m_FlipY: 0
+  m_FlipY: 1
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
