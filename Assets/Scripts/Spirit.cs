@@ -6,7 +6,7 @@ public class Spirit : MonoBehaviour
     public float moveSpeed = 3f;
     public float attackRange = 8f;
     public float detectionRange = 12f;
-    public LayerMask playerLayer = 1;
+    public string playerTag = "Player";
 
     [Header("Projectile Attack")]
     public GameObject projectilePrefab;
@@ -14,6 +14,7 @@ public class Spirit : MonoBehaviour
     public float fireRate = 1f;
     public float projectileSpeed = 6f;
     public float projectileLifetime = 5f;
+    public float projectileDamage = 1f;
 
     [Header("Movement Patterns")]
     public float floatAmplitude = 0.5f;
@@ -35,6 +36,7 @@ public class Spirit : MonoBehaviour
     private float lastDirectionChangeTime;
     private float floatTimer;
     private bool isPlayerInRange = false;
+    private Vector3 originalScale; // Store original scale from inspector
 
     // States
     public enum SpiritState
@@ -52,8 +54,11 @@ public class Spirit : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         startPosition = transform.position;
         
+        // Store the original scale set in the inspector
+        originalScale = transform.localScale;
+        
         // Find player
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
         if (playerObject != null)
             player = playerObject.transform;
 
@@ -185,22 +190,31 @@ public class Spirit : MonoBehaviour
         // Instantiate projectile
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
         
-        // Set up projectile
-        SpiritProjectile projScript = projectile.GetComponent<SpiritProjectile>();
-        if (projScript != null)
+        // Set rotation to face movement direction
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        projectile.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        
+        // Add rigidbody and set velocity
+        Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
+        if (projRb == null)
         {
-            projScript.Initialize(direction, projectileSpeed, projectileLifetime);
+            projRb = projectile.AddComponent<Rigidbody2D>();
+            projRb.gravityScale = 0f; // No gravity for spirit projectiles
         }
-        else
+        projRb.velocity = direction * projectileSpeed;
+        
+        // Add collider if it doesn't exist
+        Collider2D projCollider = projectile.GetComponent<Collider2D>();
+        if (projCollider == null)
         {
-            // Fallback: just add velocity to rigidbody
-            Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-            if (projRb != null)
-            {
-                projRb.velocity = direction * projectileSpeed;
-                Destroy(projectile, projectileLifetime);
-            }
+            CircleCollider2D circleCollider = projectile.AddComponent<CircleCollider2D>();
+            circleCollider.isTrigger = true;
+            circleCollider.radius = 0.1f;
         }
+        
+        // Add projectile component for hit detection
+        SpiritProjectileLogic projLogic = projectile.AddComponent<SpiritProjectileLogic>();
+        projLogic.Initialize(direction, projectileSpeed, projectileLifetime, projectileDamage, playerTag);
 
         // Add some visual/audio feedback here if needed
         if (AudioManager.Instance != null)
@@ -227,10 +241,15 @@ public class Spirit : MonoBehaviour
         if ((currentState == SpiritState.Chasing || currentState == SpiritState.Attacking) && player != null)
         {
             Vector2 direction = player.position - transform.position;
+            
+            // Preserve original scale but flip x direction
+            Vector3 newScale = originalScale;
             if (direction.x > 0)
-                transform.localScale = new Vector3(1, 1, 1);
+                newScale.x = Mathf.Abs(originalScale.x); // Face right
             else
-                transform.localScale = new Vector3(-1, 1, 1);
+                newScale.x = -Mathf.Abs(originalScale.x); // Face left
+                
+            transform.localScale = newScale;
         }
     }
 
@@ -272,5 +291,129 @@ public class Spirit : MonoBehaviour
     public SpiritState GetCurrentState()
     {
         return currentState;
+    }
+}
+
+// Simple projectile logic class to handle spirit projectile behavior
+public class SpiritProjectileLogic : MonoBehaviour
+{
+    private Vector2 direction;
+    private float speed;
+    private float lifetime;
+    private float damage;
+    private string targetTag;
+    private float spawnTime;
+    private bool hasHit = false;
+
+    public void Initialize(Vector2 moveDirection, float moveSpeed, float projectileLifetime, float projectileDamage, string playerTag)
+    {
+        direction = moveDirection.normalized;
+        speed = moveSpeed;
+        lifetime = projectileLifetime;
+        damage = projectileDamage;
+        targetTag = playerTag;
+        spawnTime = Time.time;
+
+        // Destroy after lifetime
+        Destroy(gameObject, lifetime);
+    }
+
+    void Update()
+    {
+        // Fade out near end of lifetime
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            float timeRemaining = lifetime - (Time.time - spawnTime);
+            if (timeRemaining < 1f)
+            {
+                Color color = spriteRenderer.color;
+                color.a = timeRemaining;
+                spriteRenderer.color = color;
+            }
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (hasHit) return;
+
+        // Check if hit player using tag
+        if (other.CompareTag(targetTag))
+        {
+            // Try to damage player
+            PlayerController2D player = other.GetComponent<PlayerController2D>();
+            if (player != null)
+            {
+                DamagePlayer(player);
+            }
+
+            // Alternative: Try generic health component
+            Health playerHealth = other.GetComponent<Health>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(damage);
+            }
+
+            hasHit = true;
+            CreateHitEffect();
+            DestroyProjectile();
+        }
+        // Hit solid objects (walls, terrain, etc.) - avoid hitting spirits
+        else if (!other.CompareTag("Spirit") && other.gameObject.layer != gameObject.layer)
+        {
+            hasHit = true;
+            CreateHitEffect();
+            DestroyProjectile();
+        }
+    }
+
+    void DamagePlayer(PlayerController2D player)
+    {
+        // Apply knockback
+        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+        if (playerRb != null)
+        {
+            Vector2 knockbackDirection = direction;
+            float knockbackForce = 5f;
+            playerRb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
+        }
+
+        // Play hit sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX("PlayerHit");
+        }
+
+        Debug.Log("Player hit by spirit projectile!");
+    }
+
+    void CreateHitEffect()
+    {
+        // Play hit sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX("ProjectileHit");
+        }
+    }
+
+    void DestroyProjectile()
+    {
+        // Stop any trail effects
+        TrailRenderer trailRenderer = GetComponent<TrailRenderer>();
+        if (trailRenderer != null)
+        {
+            trailRenderer.enabled = false;
+        }
+
+        // Stop particles
+        ParticleSystem particles = GetComponent<ParticleSystem>();
+        if (particles != null)
+        {
+            particles.Stop();
+        }
+
+        // Destroy the game object
+        Destroy(gameObject);
     }
 }

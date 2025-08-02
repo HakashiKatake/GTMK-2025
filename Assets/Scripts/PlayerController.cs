@@ -30,6 +30,7 @@ public class PlayerController2D : MonoBehaviour
     public float pelletSpeed = 20f;
     public float fireCooldown = 0.5f;
     public float recoilForce = 8f;
+    public float pelletLifetime = 3f; // Time before pellets disappear
     private float lastFireTime;
 
     [Header("Animation")]
@@ -176,9 +177,7 @@ public class PlayerController2D : MonoBehaviour
 
     void FireShotgun()
     {
-        // No fire animation trigger since it's not available
-
-        // Spawn pellets
+        
         for (int i = 0; i < pelletCount; i++)
         {
             float angleOffset = Random.Range(-spreadAngle, spreadAngle);
@@ -192,6 +191,9 @@ public class PlayerController2D : MonoBehaviour
             {
                 pelletRb.velocity = pellet.transform.right * pelletSpeed;
             }
+
+            // Destroy pellet after lifetime
+            Destroy(pellet, pelletLifetime);
         }
 
         // Apply recoil in opposite direction of firing

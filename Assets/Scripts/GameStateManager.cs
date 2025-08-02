@@ -65,7 +65,7 @@ public class GameStateManager : MonoBehaviour
 
     void InitializeGameState()
     {
-        // Get player health component
+        
         if (playerSailor != null)
         {
             playerHealth = playerSailor.GetComponent<Health>();
@@ -75,7 +75,7 @@ public class GameStateManager : MonoBehaviour
             }
         }
 
-        // Set initial state
+        
         SetGameState(GameState.Sailing);
     }
 
@@ -88,7 +88,7 @@ public class GameStateManager : MonoBehaviour
 
         Debug.Log($"Game state changed from {previousState} to {newState}");
 
-        // Handle state transitions
+        
         switch (newState)
         {
             case GameState.Sailing:
@@ -108,19 +108,19 @@ public class GameStateManager : MonoBehaviour
                 break;
         }
 
-        // Update audio
+       
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.OnGameStateChanged(newState.ToString());
         }
 
-        // Notify listeners
+        
         OnStateChanged?.Invoke(newState);
     }
 
     void HandleSailingState()
     {
-        // Enable sailor player
+        
         if (playerSailor != null)
             playerSailor.SetActive(true);
         
@@ -133,8 +133,7 @@ public class GameStateManager : MonoBehaviour
         SetUIState(spiritUI, false);
         SetUIState(transitionUI, false);
 
-        // Spawn new ship if needed
-        // (This would be handled by your ship spawning system)
+       
     }
 
     void HandleDrowningState()
@@ -145,11 +144,11 @@ public class GameStateManager : MonoBehaviour
 
     void HandleSpiritState()
     {
-        // Disable sailor player
+        
         if (playerSailor != null)
             playerSailor.SetActive(false);
         
-        // Enable spirit player
+        
         if (playerSpirit != null)
         {
             playerSpirit.SetActive(true);
