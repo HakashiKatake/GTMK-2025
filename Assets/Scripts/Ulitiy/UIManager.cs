@@ -78,4 +78,9 @@ public class UIManager : MonoBehaviour
         // Load the "Game" scene
         SceneManager.LoadScene("Game");
     }
+
+    public void OnCreditsButtonClicked()
+    {
+        SceneManager.LoadScene("Credits");
+    }
 }
