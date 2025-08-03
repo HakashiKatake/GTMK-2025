@@ -109,10 +109,7 @@ public class GameStateManager : MonoBehaviour
         }
 
        
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.OnGameStateChanged(newState.ToString());
-        }
+        
 
         
         OnStateChanged?.Invoke(newState);
@@ -124,11 +121,11 @@ public class GameStateManager : MonoBehaviour
         if (playerSailor != null)
             playerSailor.SetActive(true);
         
-        // Disable spirit player
+        
         if (playerSpirit != null)
             playerSpirit.SetActive(false);
 
-        // Update UI
+     
         SetUIState(sailingUI, true);
         SetUIState(spiritUI, false);
         SetUIState(transitionUI, false);
@@ -187,7 +184,7 @@ public class GameStateManager : MonoBehaviour
         // Play drowning audio
         if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.PlaySFX("Drowning");
+            AudioManager.Instance.PlaySFX("drown");
         }
 
         // Wait for transition

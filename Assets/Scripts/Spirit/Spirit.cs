@@ -4,7 +4,7 @@ public class Spirit : MonoBehaviour
 {
     [Header("Spirit Behavior")]
     public float moveSpeed = 3f;
-    public float attackRange = 8f;
+    public float attackRange = 2f;  // Much smaller - spirit gets very close before chasing
     public float detectionRange = 12f;
     public string playerTag = "Player";
 
@@ -86,7 +86,6 @@ public class Spirit : MonoBehaviour
         UpdateState();
         HandleMovement();
         HandleAttacking();
-        UpdateVisuals();
     }
 
     void CheckPlayerDistance()
@@ -98,18 +97,25 @@ public class Spirit : MonoBehaviour
         // Update player in range status
         isPlayerInRange = distanceToPlayer <= detectionRange;
 
-        // State transitions based on distance
-        if (distanceToPlayer <= attackRange && currentState != SpiritState.Attacking)
+        // New behavior: 
+        // - Far away (outside detection range): Wander
+        // - Medium distance (inside detection but outside attack range): Shoot and approach
+        // - Very close (inside attack range): Chase aggressively without shooting
+        
+        if (distanceToPlayer > detectionRange)
         {
+            // Too far - just wander
+            currentState = SpiritState.Wandering;
+        }
+        else if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange)
+        {
+            // Medium distance - shoot while approaching
             currentState = SpiritState.Attacking;
         }
-        else if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange && currentState == SpiritState.Wandering)
+        else if (distanceToPlayer <= attackRange)
         {
+            // Very close - chase aggressively without shooting
             currentState = SpiritState.Chasing;
-        }
-        else if (distanceToPlayer > detectionRange && currentState != SpiritState.Wandering)
-        {
-            currentState = SpiritState.Wandering;
         }
     }
 
@@ -118,25 +124,31 @@ public class Spirit : MonoBehaviour
         switch (currentState)
         {
             case SpiritState.Wandering:
-                // Change direction periodically
+                // Change direction periodically when no player detected
                 if (Time.time - lastDirectionChangeTime > changeDirectionTime)
                 {
                     ChangeWanderDirection();
                 }
                 break;
 
-            case SpiritState.Chasing:
-                // Move towards player
+            case SpiritState.Attacking:
+                // Medium distance: Shoot while slowly approaching player
                 if (player != null)
                 {
                     Vector2 directionToPlayer = (player.position - transform.position).normalized;
-                    rb.velocity = directionToPlayer * moveSpeed;
+                    // Move slower while shooting to maintain distance and accuracy
+                    rb.velocity = directionToPlayer * (moveSpeed * 0.6f);
                 }
                 break;
 
-            case SpiritState.Attacking:
-                // Slow down when attacking
-                rb.velocity = rb.velocity * 0.5f;
+            case SpiritState.Chasing:
+                // Close distance: Chase aggressively without shooting
+                if (player != null)
+                {
+                    Vector2 directionToPlayer = (player.position - transform.position).normalized;
+                    // Move faster when chasing up close
+                    rb.velocity = directionToPlayer * (moveSpeed * 1.2f);
+                }
                 break;
         }
     }
@@ -199,7 +211,7 @@ public class Spirit : MonoBehaviour
         if (projRb == null)
         {
             projRb = projectile.AddComponent<Rigidbody2D>();
-            projRb.gravityScale = 0f; // No gravity for spirit projectiles
+            projRb.gravityScale = 0f; 
         }
         projRb.velocity = direction * projectileSpeed;
         
@@ -211,8 +223,7 @@ public class Spirit : MonoBehaviour
             circleCollider.isTrigger = true;
             circleCollider.radius = 0.1f;
         }
-        
-        // Add projectile component for hit detection
+       
         SpiritProjectileLogic projLogic = projectile.AddComponent<SpiritProjectileLogic>();
         projLogic.Initialize(direction, projectileSpeed, projectileLifetime, projectileDamage, playerTag);
 
@@ -220,36 +231,6 @@ public class Spirit : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlaySFX("SpiritAttack");
-        }
-    }
-
-    void UpdateVisuals()
-    {
-        // Fade sprite based on distance to player
-        if (spriteRenderer != null && player != null)
-        {
-            float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-            float maxDistance = detectionRange * 1.5f;
-            float alpha = Mathf.Lerp(0.3f, 1f, 1f - (distanceToPlayer / maxDistance));
-            
-            Color color = spriteRenderer.color;
-            color.a = Mathf.Clamp(alpha, 0.3f, 1f);
-            spriteRenderer.color = color;
-        }
-
-        // Face the player when chasing or attacking
-        if ((currentState == SpiritState.Chasing || currentState == SpiritState.Attacking) && player != null)
-        {
-            Vector2 direction = player.position - transform.position;
-            
-            // Preserve original scale but flip x direction
-            Vector3 newScale = originalScale;
-            if (direction.x > 0)
-                newScale.x = Mathf.Abs(originalScale.x); // Face right
-            else
-                newScale.x = -Mathf.Abs(originalScale.x); // Face left
-                
-            transform.localScale = newScale;
         }
     }
 
@@ -382,7 +363,7 @@ public class SpiritProjectileLogic : MonoBehaviour
         // Play hit sound
         if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.PlaySFX("PlayerHit");
+            AudioManager.Instance.PlaySFX("human hurt");
         }
 
         Debug.Log("Player hit by spirit projectile!");

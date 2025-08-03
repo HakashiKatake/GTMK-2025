@@ -130,9 +130,11 @@ GameObject:
   - component: {fileID: 4076839314602231268}
   - component: {fileID: 2499342194578300421}
   - component: {fileID: 8788765760704697499}
+  - component: {fileID: -7953963086794353680}
+  - component: {fileID: -1979761422192421836}
   m_Layer: 0
   m_Name: Bot
-  m_TagString: Player
+  m_TagString: Bot
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -331,6 +333,53 @@ MonoBehaviour:
     m_Bits: 1
   enemyTag: Spirit
   animator: {fileID: 2499342194578300421}
+--- !u!114 &-7953963086794353680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8705404847482061152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ab11637ea26a4197914ffd45672a3ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 50
+  currentHealth: 0
+  destroyOnDeath: 0
+  invulnerabilityTime: 1
+  damageLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  spriteRenderer: {fileID: 0}
+  damageColor: {r: 1, g: 0, b: 0, a: 1}
+  damageFlashDuration: 0.1
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &-1979761422192421836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8705404847482061152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 253b07170487a49628310613a9cfb7e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  offset: {x: 0, y: 0.83, z: 0}
 --- !u!1 &8794475388261223983
 GameObject:
   m_ObjectHideFlags: 0

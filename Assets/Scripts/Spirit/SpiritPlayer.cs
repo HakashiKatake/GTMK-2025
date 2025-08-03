@@ -169,7 +169,7 @@ public class SpiritPlayer : MonoBehaviour
         // Play attack sound
         if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.PlaySFX("SpiritAttack");
+            AudioManager.Instance.PlaySFX("spirit attack");
         }
     }
 

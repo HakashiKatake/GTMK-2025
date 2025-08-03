@@ -373,6 +373,13 @@ public class Bot : MonoBehaviour
                 pelletRb.velocity = pellet.transform.right * pelletSpeed;
             }
 
+            // Add collision detection to pellet
+            PelletCollision pelletScript = pellet.GetComponent<PelletCollision>();
+            if (pelletScript == null)
+            {
+                pelletScript = pellet.AddComponent<PelletCollision>();
+            }
+
             // Destroy pellet after lifetime
             Destroy(pellet, pelletLifetime);
         }
@@ -384,7 +391,7 @@ public class Bot : MonoBehaviour
         // Play sound
         if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.PlaySFX("ShotgunFire");
+            AudioManager.Instance.PlaySFX("shotgun");
         }
     }
 

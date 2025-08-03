@@ -17,9 +17,15 @@ public class WindManager : MonoBehaviour
         StartCoroutine(WindLoop());
     }
 
+    void OnDestroy()
+    {
+        // Stop all coroutines when the object is being destroyed
+        StopAllCoroutines();
+    }
+
     IEnumerator WindLoop()
     {
-        while (true)
+        while (this != null && mainCamera != null)
         {
             int amountToSpawn = Random.Range(1, 5);
             yield return StartCoroutine(SpawnBatch(amountToSpawn));
@@ -37,6 +43,12 @@ public class WindManager : MonoBehaviour
     {
         for (int i = 0; i < count; i++)
         {
+            // Check if camera still exists before spawning
+            if (mainCamera == null)
+            {
+                yield break;
+            }
+            
             Vector2 spawnPos = GetRandomPointInCameraView();
             GameObject wind = Instantiate(windPrefab, spawnPos, Quaternion.identity, transform);
             currentParticles.Add(wind);
@@ -47,6 +59,12 @@ public class WindManager : MonoBehaviour
 
     Vector2 GetRandomPointInCameraView()
     {
+        // Check if camera still exists
+        if (mainCamera == null)
+        {
+            return Vector2.zero;
+        }
+        
         float zDistance = 10f;
         Vector3 randomViewportPos = new Vector3(
             Random.Range(0f, 1f),

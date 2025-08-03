@@ -120,11 +120,11 @@ public class PlayerController2D : MonoBehaviour
     void HandleFlipping()
     {
         // Flip based on movement input
-        if (horizontalInput > 0 && !facingRight)
+        if (horizontalInput > 0 && facingRight)
         {
             Flip();
         }
-        else if (horizontalInput < 0 && facingRight)
+        else if (horizontalInput < 0 && !facingRight)
         {
             Flip();
         }
@@ -177,6 +177,13 @@ public class PlayerController2D : MonoBehaviour
 
     void FireShotgun()
     {
+        // Play shotgun sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX("shotgun");
+        }
+        
+        Debug.Log($"Firing {pelletCount} pellets!");
         
         for (int i = 0; i < pelletCount; i++)
         {
@@ -185,11 +192,21 @@ public class PlayerController2D : MonoBehaviour
             Quaternion pelletRot = Quaternion.Euler(0, 0, baseAngle);
 
             GameObject pellet = Instantiate(pelletPrefab, firePoint.position, pelletRot);
+            Debug.Log($"Created pellet {i + 1} at {firePoint.position}");
+            
             Rigidbody2D pelletRb = pellet.GetComponent<Rigidbody2D>();
             
             if (pelletRb != null)
             {
                 pelletRb.velocity = pellet.transform.right * pelletSpeed;
+                Debug.Log($"Pellet {i + 1} velocity set to: {pellet.transform.right * pelletSpeed}");
+            }
+
+            // Add collision detection to pellet
+            PelletCollision pelletScript = pellet.GetComponent<PelletCollision>();
+            if (pelletScript == null)
+            {
+                pelletScript = pellet.AddComponent<PelletCollision>();
             }
 
             // Destroy pellet after lifetime

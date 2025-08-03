@@ -20,9 +20,15 @@ public class StarManager : MonoBehaviour
         StartCoroutine(StarLoop());
     }
 
+    void OnDestroy()
+    {
+        // Stop all coroutines when the object is being destroyed
+        StopAllCoroutines();
+    }
+
     IEnumerator StarLoop()
     {
-        while (true)
+        while (this != null && mainCamera != null)
         {
             int amountToSpawn = Random.Range(40, 61);
             spawnPositions.Clear();
@@ -50,6 +56,13 @@ public class StarManager : MonoBehaviour
             {
                 attempts++;
                 spawnPos = GetRandomPointInCameraView();
+                
+                // If camera is destroyed, break out of the loop
+                if (mainCamera == null)
+                {
+                    yield break;
+                }
+                
                 valid = true;
 
                 foreach (Vector2 existing in spawnPositions)
@@ -76,6 +89,12 @@ public class StarManager : MonoBehaviour
 
     Vector2 GetRandomPointInCameraView()
     {
+        // Check if camera still exists
+        if (mainCamera == null)
+        {
+            return Vector2.zero;
+        }
+        
         float zDistance = 10f;
         Vector3 viewportPos = new Vector3(
             Random.Range(0f, 1f),

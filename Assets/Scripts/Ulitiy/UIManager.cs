@@ -76,6 +76,7 @@ public class UIManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
         // Load the "Game" scene
+        AudioManager.Instance.FadeInMusic(1);
         SceneManager.LoadScene("Game");
     }
 }
