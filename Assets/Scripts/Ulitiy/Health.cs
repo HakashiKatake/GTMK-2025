@@ -60,7 +60,15 @@ public class Health : MonoBehaviour
        
         if (SFXManager.instance != null)
         {
-            SFXManager.instance.PlaySfx("human hurt");
+            // Play different hurt sounds based on entity type
+            if (gameObject.CompareTag("Spirit"))
+            {
+                SFXManager.instance.PlaySfx("spirit hurt");
+            }
+            else
+            {
+                SFXManager.instance.PlaySfx("human hurt");
+            }
         }
 
      

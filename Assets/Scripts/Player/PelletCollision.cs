@@ -30,6 +30,12 @@ public class PelletCollision : MonoBehaviour
             if (spiritHealth != null)
             {
                 spiritHealth.TakeDamage(5f);
+                
+                // Play spirit hurt sound
+                if (SFXManager.instance != null)
+                {
+                    SFXManager.instance.PlaySfx("spirit hurt");
+                }
             }
             
             // Destroy pellet

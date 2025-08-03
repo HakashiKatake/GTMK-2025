@@ -156,6 +156,7 @@ MonoBehaviour:
   humanHurtSFX: {fileID: 8300000, guid: b959af4c1bc6942b18a56ea0e2b87b76, type: 3}
   humanDrownSFX: {fileID: 8300000, guid: 02748aa59ef4e4c09a059c63334033ae, type: 3}
   spiritAttackSFX: {fileID: 8300000, guid: a8202ee5117ac4868b2a294b91dedb90, type: 3}
+  spiritHurtSFX: {fileID: 8300000, guid: 05733dd1f54f34875aa54f49dc8c0b3a, type: 3}
   audioSourcePoolSize: 10
 --- !u!4 &87059376
 Transform:

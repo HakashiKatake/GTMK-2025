@@ -11,6 +11,7 @@ public class SFXManager : MonoBehaviour
     [SerializeField] private AudioClip humanHurtSFX;
     [SerializeField] private AudioClip humanDrownSFX;
     [SerializeField] private AudioClip spiritAttackSFX;
+    [SerializeField] private AudioClip spiritHurtSFX;
     
     [Header("Audio Source Pool")]
     [SerializeField] private int audioSourcePoolSize = 10;
@@ -46,6 +47,7 @@ public class SFXManager : MonoBehaviour
         if (humanHurtSFX != null) sfxClips.Add("human hurt", humanHurtSFX);
         if (humanDrownSFX != null) sfxClips.Add("human drown", humanDrownSFX);
         if (spiritAttackSFX != null) sfxClips.Add("spirit attack", spiritAttackSFX);
+        if (spiritHurtSFX != null) sfxClips.Add("spirit hurt", spiritHurtSFX);
         
         // Initialize audio source pool
         audioSourcePool = new List<AudioSource>();
