@@ -131,6 +131,7 @@ public class SpiritPlayer : MonoBehaviour
         if (projectilePrefab == null) return;
 
         // Get mouse position in world space
+        if (Camera.main == null) return;
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0f;
 
@@ -167,23 +168,24 @@ public class SpiritPlayer : MonoBehaviour
         projLogic.Initialize(direction, projectileSpeed, projectileLifetime, projectileDamage, targetTag);
 
         // Play attack sound
-        if (AudioManager.Instance != null)
+        if (AudioManager.instance != null)
         {
-            AudioManager.Instance.PlaySFX("spirit attack");
+            AudioManager.instance.PlaySfx("spirit attack");
         }
     }
 
     void CheckNearbyTargets()
     {
-        
-        Collider2D[] targets = Physics2D.OverlapCircleAll(transform.position, possessionRange, possessionTargets);
+        const int maxColliders = 10;
+        Collider2D[] results = new Collider2D[maxColliders];
+        int numColliders = Physics2D.OverlapCircleNonAlloc(transform.position, possessionRange, results, possessionTargets);
         
         GameObject closestTarget = null;
         float closestDistance = float.MaxValue;
 
-        foreach (Collider2D target in targets)
+        for (int i = 0; i < numColliders; i++)
         {
-            
+            var target = results[i];
             if (target.CompareTag(targetTag) && target.gameObject != gameObject)
             {
                 float distance = Vector2.Distance(transform.position, target.transform.position);
@@ -214,20 +216,14 @@ public class SpiritPlayer : MonoBehaviour
     {
         Debug.Log($"Possessing {target.name}!");
 
-        // Play possession sound
-        if (AudioManager.Instance != null)
+        // Switch to undead state
+        if (GameManager.instance != null)
         {
-            AudioManager.Instance.PlaySFX("Possession");
+            GameManager.instance.SwitchToUndead();
         }
 
-        // Notify game state manager about possession
-        if (GameStateManager.Instance != null)
-        {
-            GameStateManager.Instance.TryPossession(target);
-        }
-
-        // You can add possession effects here
-        // For example, disable this spirit and enable the possessed target as player
+        // Disable this spirit
+        gameObject.SetActive(false);
     }
 
     void ShowPossessionUI(bool show)

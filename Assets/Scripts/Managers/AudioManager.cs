@@ -1,55 +1,51 @@
 using UnityEngine;
-using System.Collections;
-
-[System.Serializable]
-public class AudioClipData
-{
-    public string name;
-    public AudioClip clip;
-    [Range(0f, 1f)]
-    public float volume = 1f;
-    [Range(0.1f, 3f)]
-    public float pitch = 1f;
-    public bool loop = false;
-}
+using System.Collections.Generic;
 
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager Instance;
+    public static AudioManager instance { get; private set; }
+
+    [System.Serializable]
+    public class Sound
+    {
+        public string name;
+        public AudioClip clip;
+        [Range(0f, 1f)]
+        public float volume = 1f;
+        [Range(0.1f, 3f)]
+        public float pitch = 1f;
+    }
 
     [Header("Audio Sources")]
     public AudioSource musicSource;
     public AudioSource sfxSource;
+    public AudioSource ambienceSource;
 
-    [Header("Music")]
-    public AudioClip[] musicTracks;
-    public int startingMusicIndex = 0;
+    [Header("Audio Clips")]
+    public Sound[] sounds;
+    public AudioClip fishingMusic;
+    public AudioClip battleMusic;
+    public AudioClip undeadMusic;
+    public AudioClip ambienceSound;
+
+    [Header("Volume Settings")]
     [Range(0f, 1f)]
     public float musicVolume = 0.7f;
-
-    [Header("Sound Effects")]
-    public AudioClipData[] soundEffects;
     [Range(0f, 1f)]
     public float sfxVolume = 1f;
-
-    [Header("Settings")]
     [Range(0f, 1f)]
-    public float masterVolume = 1f;
-    public float fadeTime = 2f;
+    public float ambienceVolume = 0.5f;
 
-    // Private variables
-    private int currentMusicIndex = -1;
-    private Coroutine fadeCoroutine;
+    private Dictionary<string, Sound> _soundDictionary = new();
+    private AudioClip _currentMusic;
 
     void Awake()
     {
-        // Singleton pattern
-        if (Instance == null)
+        if (instance == null)
         {
-            Instance = this;
+            instance = this;
             DontDestroyOnLoad(gameObject);
-            SetupAudioSources();
-            StartMusic();
+            InitializeAudio();
         }
         else
         {
@@ -57,242 +53,72 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    void SetupAudioSources()
+    void InitializeAudio()
     {
-        // Create music source if not assigned
+        // Setup sources if not assigned
         if (musicSource == null)
         {
-            GameObject musicGO = new GameObject("Music Source");
-            musicGO.transform.SetParent(transform);
-            musicSource = musicGO.AddComponent<AudioSource>();
+            musicSource = gameObject.AddComponent<AudioSource>();
+            musicSource.loop = true;
         }
-
-        // Create SFX source if not assigned
         if (sfxSource == null)
         {
-            GameObject sfxGO = new GameObject("SFX Source");
-            sfxGO.transform.SetParent(transform);
-            sfxSource = sfxGO.AddComponent<AudioSource>();
+            sfxSource = gameObject.AddComponent<AudioSource>();
+            sfxSource.loop = false;
+        }
+        if (ambienceSource == null)
+        {
+            ambienceSource = gameObject.AddComponent<AudioSource>();
+            ambienceSource.loop = true;
         }
 
-        // Configure sources
-        musicSource.loop = true;
-        musicSource.playOnAwake = false;
-        sfxSource.loop = false;
-        sfxSource.playOnAwake = false;
-    }
+        // Set initial volumes
+        musicSource.volume = musicVolume;
+        sfxSource.volume = sfxVolume;
+        ambienceSource.volume = ambienceVolume;
 
-    void StartMusic()
-    {
-        if (musicTracks.Length > 0 && startingMusicIndex >= 0 && startingMusicIndex < musicTracks.Length)
+        // Initialize sound dictionary
+        foreach (Sound s in sounds)
         {
-            PlayMusicTrack(startingMusicIndex, true);
+            _soundDictionary[s.name] = s;
+        }
+
+        // Start ambience if assigned
+        if (ambienceSound != null)
+        {
+            PlayAmbience(ambienceSound);
         }
     }
 
-    #region Music Control
-
-    public void PlayMusicTrack(int trackIndex, bool fadeIn = true)
+    public void PlayMusic(AudioClip music)
     {
-        if (trackIndex < 0 || trackIndex >= musicTracks.Length)
+        if (_currentMusic == music) return;
+
+        _currentMusic = music;
+        if (!music)
         {
-            Debug.LogWarning($"Music track index {trackIndex} is out of range!");
+            musicSource.Stop();
             return;
         }
 
-        if (currentMusicIndex == trackIndex && musicSource.isPlaying)
-        {
-            return; // Already playing this track
-        }
-
-        if (fadeCoroutine != null)
-        {
-            StopCoroutine(fadeCoroutine);
-        }
-
-        currentMusicIndex = trackIndex;
-        fadeCoroutine = StartCoroutine(FadeToNewTrack(musicTracks[trackIndex], fadeIn));
-    }
-
-    public void FadeInMusic(int trackIndex)
-    {
-        PlayMusicTrack(trackIndex, true);
-    }
-
-    public void FadeOutMusic()
-    {
-        if (fadeCoroutine != null)
-        {
-            StopCoroutine(fadeCoroutine);
-        }
-
-        fadeCoroutine = StartCoroutine(FadeOutCurrentTrack());
-    }
-
-    public void StopMusic()
-    {
-        if (fadeCoroutine != null)
-        {
-            StopCoroutine(fadeCoroutine);
-        }
-
-        musicSource.Stop();
-        currentMusicIndex = -1;
-    }
-
-    IEnumerator FadeToNewTrack(AudioClip newTrack, bool fadeIn)
-    {
-        // Fade out current music if playing
-        if (musicSource.isPlaying)
-        {
-            float startVolume = musicSource.volume;
-            for (float t = 0; t < fadeTime * 0.5f; t += Time.deltaTime)
-            {
-                musicSource.volume = Mathf.Lerp(startVolume, 0, t / (fadeTime * 0.5f));
-                yield return null;
-            }
-            musicSource.Stop();
-        }
-
-        // Start new track
-        musicSource.clip = newTrack;
-        musicSource.volume = 0;
+        musicSource.clip = music;
         musicSource.Play();
-
-        // Fade in new music
-        if (fadeIn)
-        {
-            float targetVolume = musicVolume * masterVolume;
-            for (float t = 0; t < fadeTime * 0.5f; t += Time.deltaTime)
-            {
-                musicSource.volume = Mathf.Lerp(0, targetVolume, t / (fadeTime * 0.5f));
-                yield return null;
-            }
-            musicSource.volume = targetVolume;
-        }
-        else
-        {
-            musicSource.volume = musicVolume * masterVolume;
-        }
-
-        fadeCoroutine = null;
     }
 
-    IEnumerator FadeOutCurrentTrack()
+    public void PlaySfx(string soundName)
     {
-        if (!musicSource.isPlaying) yield break;
-
-        float startVolume = musicSource.volume;
-        for (float t = 0; t < fadeTime; t += Time.deltaTime)
+        if (_soundDictionary.TryGetValue(soundName, out Sound sound))
         {
-            musicSource.volume = Mathf.Lerp(startVolume, 0, t / fadeTime);
-            yield return null;
-        }
-
-        musicSource.Stop();
-        musicSource.volume = 0;
-        currentMusicIndex = -1;
-        fadeCoroutine = null;
-    }
-
-    #endregion
-
-    #region Sound Effects
-
-    public void PlaySFX(string sfxName)
-    {
-        AudioClipData sfxData = GetSFXData(sfxName);
-        if (sfxData != null && sfxData.clip != null)
-        {
-            sfxSource.pitch = sfxData.pitch;
-            sfxSource.PlayOneShot(sfxData.clip, sfxData.volume * sfxVolume * masterVolume);
+            sfxSource.pitch = sound.pitch;
+            sfxSource.PlayOneShot(sound.clip, sound.volume * sfxVolume);
         }
     }
 
-    public void PlaySFX(string sfxName, float volumeScale)
+    public void PlayAmbience(AudioClip ambience)
     {
-        AudioClipData sfxData = GetSFXData(sfxName);
-        if (sfxData != null && sfxData.clip != null)
-        {
-            sfxSource.pitch = sfxData.pitch;
-            sfxSource.PlayOneShot(sfxData.clip, sfxData.volume * volumeScale * sfxVolume * masterVolume);
-        }
+        if (ambienceSource.clip == ambience && ambienceSource.isPlaying) return;
+
+        ambienceSource.clip = ambience;
+        ambienceSource.Play();
     }
-
-    private AudioClipData GetSFXData(string sfxName)
-    {
-        foreach (var sfx in soundEffects)
-        {
-            if (sfx.name == sfxName)
-            {
-                return sfx;
-            }
-        }
-        Debug.LogWarning($"Sound effect '{sfxName}' not found!");
-        return null;
-    }
-
-    #endregion
-
-    #region Volume Control
-
-    public void SetMasterVolume(float volume)
-    {
-        masterVolume = Mathf.Clamp01(volume);
-        UpdateMusicVolume();
-    }
-
-    public void SetMusicVolume(float volume)
-    {
-        musicVolume = Mathf.Clamp01(volume);
-        UpdateMusicVolume();
-    }
-
-    public void SetSFXVolume(float volume)
-    {
-        sfxVolume = Mathf.Clamp01(volume);
-    }
-
-    private void UpdateMusicVolume()
-    {
-        if (musicSource.isPlaying)
-        {
-            musicSource.volume = musicVolume * masterVolume;
-        }
-    }
-
-    #endregion
-
-    #region Public Utility Methods
-
-    public bool IsMusicPlaying()
-    {
-        return musicSource.isPlaying;
-    }
-
-    public int GetCurrentMusicIndex()
-    {
-        return currentMusicIndex;
-    }
-
-    public void NextTrack()
-    {
-        if (musicTracks.Length > 0)
-        {
-            int nextIndex = (currentMusicIndex + 1) % musicTracks.Length;
-            PlayMusicTrack(nextIndex, true);
-        }
-    }
-
-    public void PreviousTrack()
-    {
-        if (musicTracks.Length > 0)
-        {
-            int prevIndex = currentMusicIndex - 1;
-            if (prevIndex < 0) prevIndex = musicTracks.Length - 1;
-            PlayMusicTrack(prevIndex, true);
-        }
-    }
-
-    #endregion
 }

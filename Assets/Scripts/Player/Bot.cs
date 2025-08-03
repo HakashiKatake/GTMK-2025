@@ -281,7 +281,7 @@ public class Bot : MonoBehaviour
         if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-            jumpBufferCounter = 0f; // Consume the jump buffer
+            jumpBufferCounter = 0f;
         }
     }
 
@@ -387,11 +387,17 @@ public class Bot : MonoBehaviour
         // Apply recoil in opposite direction of firing
         Vector2 recoilDir = -(shotgun.right);
         rb.AddForce(recoilDir * recoilForce, ForceMode2D.Impulse);
+    }
 
-        // Play sound
-        if (AudioManager.Instance != null)
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        // Play hit sound when getting hit
+        if (other.CompareTag("Spirit") || other.CompareTag("SpiritProjectile"))
         {
-            AudioManager.Instance.PlaySFX("shotgun");
+            if (AudioManager.instance != null)
+            {
+                AudioManager.instance.PlaySfx("human hurt");
+            }
         }
     }
 

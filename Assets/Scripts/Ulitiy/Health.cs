@@ -58,9 +58,9 @@ public class Health : MonoBehaviour
         StartCoroutine(DamageFlash());
 
        
-        if (AudioManager.Instance != null)
+        if (AudioManager.instance != null)
         {
-            AudioManager.Instance.PlaySFX("PlayerHit");
+            AudioManager.instance.PlaySfx("human hurt");
         }
 
      
@@ -86,12 +86,6 @@ public class Health : MonoBehaviour
         currentHealth += amount;
         currentHealth = Mathf.Min(maxHealth, currentHealth);
 
-        
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySFX("Heal");
-        }
-
        
         OnHealed.Invoke();
         OnHealthChanged.Invoke(currentHealth / maxHealth);
@@ -108,13 +102,6 @@ public class Health : MonoBehaviour
     void Die()
     {
         Debug.Log($"{gameObject.name} has died!");
-
-        
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySFX("Death");
-        }
-
        
         OnDeath.Invoke();
 

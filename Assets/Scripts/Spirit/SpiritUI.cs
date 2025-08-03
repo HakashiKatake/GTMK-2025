@@ -16,17 +16,11 @@ public class SpiritUI : MonoBehaviour
 
     void Start()
     {
-        // Find the spirit player
         spiritPlayer = FindObjectOfType<SpiritPlayer>();
-        
-        // Get canvas group for fading
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
-
-        // Hide UI initially
-        if (canvasGroup != null)
-            canvasGroup.alpha = 0f;
+        canvasGroup.alpha = 0f;
     }
 
     void Update()
@@ -36,47 +30,48 @@ public class SpiritUI : MonoBehaviour
 
     void UpdateUI()
     {
-        // Show/hide possession text based on spirit player state
-        if (spiritPlayer != null && possessionText != null)
-        {
-            bool showPossession = spiritPlayer.IsNearPossessionTarget();
-            possessionText.gameObject.SetActive(showPossession);
-            
-            if (showPossession)
-            {
-                possessionText.text = "Press E to Possess";
-                
-                // Make it pulse
-                float pulse = Mathf.Sin(Time.time * 3f) * 0.5f + 0.5f;
-                Color color = possessionText.color;
-                color.a = 0.7f + pulse * 0.3f;
-                possessionText.color = color;
-            }
-        }
+        UpdatePossessionText();
+        UpdateStateText();
+        UpdateVisibility();
+    }
 
-        // Update state text
-        if (stateText != null && GameStateManager.Instance != null)
-        {
-            stateText.text = "State: " + GameStateManager.Instance.currentState.ToString();
-        }
+    void UpdatePossessionText()
+    {
+        if (spiritPlayer == null || possessionText == null) return;
 
-        // Fade in/out based on game state
-        if (canvasGroup != null && GameStateManager.Instance != null)
+        bool showPossession = spiritPlayer.IsNearPossessionTarget();
+        possessionText.gameObject.SetActive(showPossession);
+        
+        if (showPossession)
         {
-            bool shouldShow = GameStateManager.Instance.IsInState(GameStateManager.GameState.Spirit);
-            float targetAlpha = shouldShow ? 1f : 0f;
-            canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, targetAlpha, Time.deltaTime * fadeSpeed);
+            possessionText.text = "Press E to Possess";
+            float pulse = Mathf.Sin(Time.time * 3f) * 0.5f + 0.5f;
+            Color color = possessionText.color;
+            color.a = 0.7f + pulse * 0.3f;
+            possessionText.color = color;
         }
+    }
+
+    void UpdateStateText()
+    {
+        if (stateText != null)
+            stateText.text = "State: " + GameManager.instance.GetCurrentState().ToString();
+    }
+
+    void UpdateVisibility()
+    {
+        bool shouldShow = GameManager.instance.GetCurrentState() == GameManager.GameState.Battle;
+        float targetAlpha = shouldShow ? 1f : 0f;
+        canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, targetAlpha, Time.deltaTime * fadeSpeed);
     }
 
     public void ShowMessage(string message, float duration = 3f)
     {
-        if (stateText != null)
-        {
-            stateText.text = message;
-            CancelInvoke(nameof(ClearMessage));
-            Invoke(nameof(ClearMessage), duration);
-        }
+        if (stateText == null) return;
+        
+        stateText.text = message;
+        CancelInvoke(nameof(ClearMessage));
+        Invoke(nameof(ClearMessage), duration);
     }
 
     void ClearMessage()

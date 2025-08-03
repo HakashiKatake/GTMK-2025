@@ -13,14 +13,14 @@ public class PlayerController2D : MonoBehaviour
 
     [Header("Player Visuals")]
     public Transform playerVisuals; // The visual representation that will flip
-    private bool facingRight = true;
+    private bool _facingRight = true;
 
     [Header("Shotgun")]
     public Transform shotgun;
     public float armLength = 1.5f;
     public float rotationLerpSpeed = 10f;
     public float followDelay = 0.1f;
-    private Vector2 rotationVelocity;
+    private Vector2 _rotationVelocity;
 
     [Header("Shooting")]
     public GameObject pelletPrefab;
@@ -31,22 +31,22 @@ public class PlayerController2D : MonoBehaviour
     public float fireCooldown = 0.5f;
     public float recoilForce = 8f;
     public float pelletLifetime = 3f; // Time before pellets disappear
-    private float lastFireTime;
+    private float _lastFireTime;
 
     [Header("Animation")]
     public Animator animator;
 
     // Private variables
-    private Rigidbody2D rb;
-    private bool isGrounded;
-    private bool wasGrounded;
-    private float coyoteTimeCounter;
-    private float jumpBufferCounter;
-    private float horizontalInput;
+    private Rigidbody2D _rb;
+    private bool _isGrounded;
+    private bool _wasGrounded;
+    private float _coyoteTimeCounter;
+    private float _jumpBufferCounter;
+    private float _horizontalInput;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
+        _rb = GetComponent<Rigidbody2D>();
         
         // Try to get animator from this GameObject first, then from playerVisuals
         if (animator == null)
@@ -80,51 +80,51 @@ public class PlayerController2D : MonoBehaviour
 
     void HandleInput()
     {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
+        _horizontalInput = Input.GetAxisRaw("Horizontal");
         
         // Jump buffer - allows jumping slightly before hitting ground
         if (Input.GetButtonDown("Jump"))
-            jumpBufferCounter = jumpBufferTime;
+            _jumpBufferCounter = jumpBufferTime;
         else
-            jumpBufferCounter -= Time.deltaTime;
+            _jumpBufferCounter -= Time.deltaTime;
     }
 
     void CheckGroundStatus()
     {
-        wasGrounded = isGrounded;
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        _wasGrounded = _isGrounded;
+        _isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         
         // Coyote time - allows jumping slightly after leaving ground
-        if (isGrounded)
-            coyoteTimeCounter = coyoteTime;
+        if (_isGrounded)
+            _coyoteTimeCounter = coyoteTime;
         else
-            coyoteTimeCounter -= Time.deltaTime;
+            _coyoteTimeCounter -= Time.deltaTime;
     }
 
     void HandleMovement()
     {
         // Apply horizontal movement
-        rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
+        _rb.velocity = new Vector2(_horizontalInput * moveSpeed, _rb.velocity.y);
     }
 
     void HandleJumping()
     {
         // Jump if we have jump buffer and are grounded (or in coyote time)
-        if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
+        if (_jumpBufferCounter > 0f && _coyoteTimeCounter > 0f)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-            jumpBufferCounter = 0f; // Consume the jump buffer
+            _rb.velocity = new Vector2(_rb.velocity.x, jumpForce);
+            _jumpBufferCounter = 0f; // Consume the jump buffer
         }
     }
 
     void HandleFlipping()
     {
         // Flip based on movement input
-        if (horizontalInput > 0 && facingRight)
+        if (_horizontalInput > 0 && _facingRight)
         {
             Flip();
         }
-        else if (horizontalInput < 0 && !facingRight)
+        else if (_horizontalInput < 0 && !_facingRight)
         {
             Flip();
         }
@@ -132,7 +132,7 @@ public class PlayerController2D : MonoBehaviour
 
     void Flip()
     {
-        facingRight = !facingRight;
+        _facingRight = !_facingRight;
         Vector3 scale = playerVisuals.localScale;
         scale.x *= -1;
         playerVisuals.localScale = scale;
@@ -143,9 +143,9 @@ public class PlayerController2D : MonoBehaviour
         if (animator != null)
         {
             // Set animation parameters - only using the three available parameters
-            animator.SetFloat("xVelocity", Mathf.Abs(rb.velocity.x));
-            animator.SetFloat("yVelocity", rb.velocity.y);
-            animator.SetBool("isJumping", !isGrounded);
+            animator.SetFloat("xVelocity", Mathf.Abs(_rb.velocity.x));
+            animator.SetFloat("yVelocity", _rb.velocity.y);
+            animator.SetBool("isJumping", !_isGrounded);
             
             // No landing trigger or other parameters
         }
@@ -153,10 +153,10 @@ public class PlayerController2D : MonoBehaviour
 
     void HandleShooting()
     {
-        if (Input.GetMouseButtonDown(0) && Time.time >= lastFireTime + fireCooldown)
+        if (Input.GetMouseButtonDown(0) && Time.time >= _lastFireTime + fireCooldown)
         {
             FireShotgun();
-            lastFireTime = Time.time;
+            _lastFireTime = Time.time;
         }
     }
 
@@ -169,7 +169,7 @@ public class PlayerController2D : MonoBehaviour
         float targetAngle = Mathf.Atan2(toMouse.y, toMouse.x) * Mathf.Rad2Deg;
 
         float currentAngle = shotgun.eulerAngles.z;
-        float smoothedAngle = Mathf.SmoothDampAngle(currentAngle, targetAngle, ref rotationVelocity.x, followDelay);
+        float smoothedAngle = Mathf.SmoothDampAngle(currentAngle, targetAngle, ref _rotationVelocity.x, followDelay);
 
         shotgun.rotation = Quaternion.Euler(0, 0, smoothedAngle);
         shotgun.position = transform.position + shotgun.right * armLength;
@@ -177,13 +177,10 @@ public class PlayerController2D : MonoBehaviour
 
     void FireShotgun()
     {
-        // Play shotgun sound effect
-        if (AudioManager.Instance != null)
+        if (AudioManager.instance != null)
         {
-            AudioManager.Instance.PlaySFX("shotgun");
+            AudioManager.instance.PlaySfx("shotgun");
         }
-        
-        Debug.Log($"Firing {pelletCount} pellets!");
         
         for (int i = 0; i < pelletCount; i++)
         {
@@ -192,33 +189,34 @@ public class PlayerController2D : MonoBehaviour
             Quaternion pelletRot = Quaternion.Euler(0, 0, baseAngle);
 
             GameObject pellet = Instantiate(pelletPrefab, firePoint.position, pelletRot);
-            Debug.Log($"Created pellet {i + 1} at {firePoint.position}");
-            
             Rigidbody2D pelletRb = pellet.GetComponent<Rigidbody2D>();
             
-            if (pelletRb != null)
+            if (pelletRb)
             {
                 pelletRb.velocity = pellet.transform.right * pelletSpeed;
-                Debug.Log($"Pellet {i + 1} velocity set to: {pellet.transform.right * pelletSpeed}");
             }
 
             // Add collision detection to pellet
             PelletCollision pelletScript = pellet.GetComponent<PelletCollision>();
-            if (pelletScript == null)
+            if (!pelletScript)
             {
                 pelletScript = pellet.AddComponent<PelletCollision>();
             }
 
-            // Destroy pellet after lifetime
             Destroy(pellet, pelletLifetime);
         }
 
-        // Apply recoil in opposite direction of firing
         Vector2 recoilDir = -(shotgun.right);
-        rb.AddForce(recoilDir * recoilForce, ForceMode2D.Impulse);
+        _rb.AddForce(recoilDir * recoilForce, ForceMode2D.Impulse);
     }
 
-    
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!(other.CompareTag("Spirit") || other.CompareTag("SpiritProjectile")))return;
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlaySfx("human hurt");
+        }
+        if (other.gameObject.CompareTag("Spirit"))GameManager.instance.SwitchToUndead();
+    }
 }
-
-

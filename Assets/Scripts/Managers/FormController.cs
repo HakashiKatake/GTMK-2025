@@ -8,10 +8,6 @@ public class FormController : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        if (other.gameObject.CompareTag("Spirit"))
-        {
-            humanForm.SetActive(false);
-            spiritForm.SetActive(true);
-        }
+        if (other.gameObject.CompareTag("Spirit"))GameManager.instance.SwitchToUndead();
     }
 }

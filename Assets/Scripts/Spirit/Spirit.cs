@@ -28,15 +28,14 @@ public class Spirit : MonoBehaviour
     public bool startTransparent = true;
 
     // Private variables
-    private Transform player;
-    private Rigidbody2D rb;
-    private Vector3 startPosition;
-    private Vector2 wanderDirection;
-    private float lastFireTime;
-    private float lastDirectionChangeTime;
-    private float floatTimer;
-    private bool isPlayerInRange = false;
-    private Vector3 originalScale; // Store original scale from inspector
+    private Transform _player;
+    private Rigidbody2D _rb;
+    private Vector3 _startPosition;
+    private Vector2 _wanderDirection;
+    private float _lastFireTime;
+    private float _lastDirectionChangeTime;
+    private float _floatTimer;
+    private SpiritState _currentState = SpiritState.Wandering;
 
     // States
     public enum SpiritState
@@ -47,25 +46,27 @@ public class Spirit : MonoBehaviour
         Retreating
     }
 
-    private SpiritState currentState = SpiritState.Wandering;
-
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        startPosition = transform.position;
+        _rb = GetComponent<Rigidbody2D>();
+        _startPosition = transform.position;
         
-        // Store the original scale set in the inspector
-        originalScale = transform.localScale;
-        
-        // Find player
-        GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
-        if (playerObject != null)
-            player = playerObject.transform;
+        // Only find player and initialize if we're in battle state
+        if (GameManager.instance.GetCurrentState() == GameManager.GameState.Battle)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+            if (playerObject != null)
+                _player = playerObject.transform;
+        }
+        else
+        {
+            enabled = false;
+            if (spriteRenderer != null)
+                spriteRenderer.enabled = false;
+        }
 
-        // Setup initial wander direction
         ChangeWanderDirection();
 
-        // Setup sprite transparency if needed
         if (spriteRenderer != null && startTransparent)
         {
             Color color = spriteRenderer.color;
@@ -73,59 +74,74 @@ public class Spirit : MonoBehaviour
             spriteRenderer.color = color;
         }
 
-        // Error checking
         if (projectilePrefab == null) 
             Debug.LogWarning("Spirit: Projectile prefab not assigned!");
         if (firePoint == null) 
-            firePoint = transform; // Use spirit position as fallback
+            firePoint = transform;
+    }
+
+    void OnEnable()
+    {
+        if (GameManager.instance.GetCurrentState() != GameManager.GameState.Battle)
+        {
+            enabled = false;
+            if (spriteRenderer != null)
+                spriteRenderer.enabled = false;
+            return;
+        }
+
+        if (_rb == null)
+            _rb = GetComponent<Rigidbody2D>();
+            
+        _startPosition = transform.position;
+        _currentState = SpiritState.Wandering;
+        
+        GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+        if (playerObject != null)
+            _player = playerObject.transform;
     }
 
     void Update()
     {
-        CheckPlayerDistance();
-        UpdateState();
-        HandleMovement();
-        HandleAttacking();
+        if (GameManager.instance.GetCurrentState() == GameManager.GameState.Battle)
+        {
+            CheckPlayerDistance();
+            UpdateState();
+            HandleMovement();
+            HandleAttacking();
+        }
     }
 
     void CheckPlayerDistance()
     {
-        if (player == null) return;
+        if (_player == null) return;
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-        
-        // Update player in range status
-        isPlayerInRange = distanceToPlayer <= detectionRange;
+        float distanceToPlayer = Vector2.Distance(transform.position, _player.position);
 
-        // New behavior: 
-        // - Far away (outside detection range): Wander
-        // - Medium distance (inside detection but outside attack range): Shoot and approach
-        // - Very close (inside attack range): Chase aggressively without shooting
-        
         if (distanceToPlayer > detectionRange)
         {
             // Too far - just wander
-            currentState = SpiritState.Wandering;
+            _currentState = SpiritState.Wandering;
         }
         else if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange)
         {
             // Medium distance - shoot while approaching
-            currentState = SpiritState.Attacking;
+            _currentState = SpiritState.Attacking;
         }
         else if (distanceToPlayer <= attackRange)
         {
             // Very close - chase aggressively without shooting
-            currentState = SpiritState.Chasing;
+            _currentState = SpiritState.Chasing;
         }
     }
 
     void UpdateState()
     {
-        switch (currentState)
+        switch (_currentState)
         {
             case SpiritState.Wandering:
                 // Change direction periodically when no player detected
-                if (Time.time - lastDirectionChangeTime > changeDirectionTime)
+                if (Time.time - _lastDirectionChangeTime > changeDirectionTime)
                 {
                     ChangeWanderDirection();
                 }
@@ -133,21 +149,21 @@ public class Spirit : MonoBehaviour
 
             case SpiritState.Attacking:
                 // Medium distance: Shoot while slowly approaching player
-                if (player != null)
+                if (_player != null)
                 {
-                    Vector2 directionToPlayer = (player.position - transform.position).normalized;
+                    Vector2 directionToPlayer = (_player.position - transform.position).normalized;
                     // Move slower while shooting to maintain distance and accuracy
-                    rb.velocity = directionToPlayer * (moveSpeed * 0.6f);
+                    _rb.velocity = directionToPlayer * (moveSpeed * 0.6f);
                 }
                 break;
 
             case SpiritState.Chasing:
                 // Close distance: Chase aggressively without shooting
-                if (player != null)
+                if (_player != null)
                 {
-                    Vector2 directionToPlayer = (player.position - transform.position).normalized;
+                    Vector2 directionToPlayer = (_player.position - transform.position).normalized;
                     // Move faster when chasing up close
-                    rb.velocity = directionToPlayer * (moveSpeed * 1.2f);
+                    _rb.velocity = directionToPlayer * (moveSpeed * 1.2f);
                 }
                 break;
         }
@@ -155,89 +171,76 @@ public class Spirit : MonoBehaviour
 
     void HandleMovement()
     {
-        // Add floating motion
-        floatTimer += Time.deltaTime;
-        float floatY = Mathf.Sin(floatTimer * floatFrequency) * floatAmplitude;
+        _floatTimer += Time.deltaTime;
+        float floatY = Mathf.Sin(_floatTimer * floatFrequency) * floatAmplitude;
 
-        if (currentState == SpiritState.Wandering)
+        if (_currentState == SpiritState.Wandering)
         {
-            // Wander around starting position
-            Vector2 targetPosition = startPosition + (Vector3)wanderDirection * wanderRadius;
+            Vector2 targetPosition = _startPosition + (Vector3)_wanderDirection * wanderRadius;
             Vector2 direction = (targetPosition - (Vector2)transform.position).normalized;
             
-            rb.velocity = new Vector2(direction.x * moveSpeed, direction.y * moveSpeed);
+            _rb.velocity = new Vector2(direction.x * moveSpeed, direction.y * moveSpeed);
             
-            // Check if we're close to target, then change direction
             if (Vector2.Distance(transform.position, targetPosition) < 1f)
             {
                 ChangeWanderDirection();
             }
         }
 
-        // Apply floating effect
         Vector3 currentPos = transform.position;
-        currentPos.y = startPosition.y + floatY;
+        currentPos.y = _startPosition.y + floatY;
         transform.position = currentPos;
     }
 
     void HandleAttacking()
     {
-        if (currentState != SpiritState.Attacking || player == null) return;
+        if (_currentState != SpiritState.Attacking || _player == null) return;
 
         // Fire projectiles at regular intervals
-        if (Time.time - lastFireTime > 1f / fireRate)
+        if (Time.time - _lastFireTime > 1f / fireRate)
         {
             FireProjectile();
-            lastFireTime = Time.time;
+            _lastFireTime = Time.time;
         }
     }
 
     void FireProjectile()
     {
-        if (projectilePrefab == null || player == null) return;
-
-        // Calculate direction to player
-        Vector2 direction = (player.position - firePoint.position).normalized;
+        if (projectilePrefab == null || _player == null) return;
         
-        // Instantiate projectile
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlaySfx("spirit attack");
+        }
+        
+        Vector2 direction = (_player.position - firePoint.position).normalized;
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
         
-        // Set rotation to face movement direction
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         projectile.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
         
-        // Add rigidbody and set velocity
-        Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-        if (projRb == null)
+        if (!projectile.TryGetComponent<Rigidbody2D>(out var projRb))
         {
             projRb = projectile.AddComponent<Rigidbody2D>();
-            projRb.gravityScale = 0f; 
+            projRb.gravityScale = 0f;
         }
         projRb.velocity = direction * projectileSpeed;
         
-        // Add collider if it doesn't exist
-        Collider2D projCollider = projectile.GetComponent<Collider2D>();
-        if (projCollider == null)
+        if (!projectile.TryGetComponent<Collider2D>(out var _))
         {
-            CircleCollider2D circleCollider = projectile.AddComponent<CircleCollider2D>();
+            var circleCollider = projectile.AddComponent<CircleCollider2D>();
             circleCollider.isTrigger = true;
             circleCollider.radius = 0.1f;
         }
        
-        SpiritProjectileLogic projLogic = projectile.AddComponent<SpiritProjectileLogic>();
+        var projLogic = projectile.AddComponent<SpiritProjectileLogic>();
         projLogic.Initialize(direction, projectileSpeed, projectileLifetime, projectileDamage, playerTag);
-
-        // Add some visual/audio feedback here if needed
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySFX("SpiritAttack");
-        }
     }
 
     void ChangeWanderDirection()
     {
-        wanderDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
-        lastDirectionChangeTime = Time.time;
+        _wanderDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+        _lastDirectionChangeTime = Time.time;
     }
 
     void OnDrawGizmosSelected()
@@ -253,7 +256,7 @@ public class Spirit : MonoBehaviour
         // Draw wander radius
         Gizmos.color = Color.blue;
         if (Application.isPlaying)
-            Gizmos.DrawWireSphere(startPosition, wanderRadius);
+            Gizmos.DrawWireSphere(_startPosition, wanderRadius);
         else
             Gizmos.DrawWireSphere(transform.position, wanderRadius);
     }
@@ -261,140 +264,89 @@ public class Spirit : MonoBehaviour
     // Public methods for external control
     public void SetTarget(Transform newTarget)
     {
-        player = newTarget;
+        _player = newTarget;
     }
 
     public void ForceState(SpiritState newState)
     {
-        currentState = newState;
+        _currentState = newState;
     }
 
     public SpiritState GetCurrentState()
     {
-        return currentState;
+        return _currentState;
     }
 }
 
 // Simple projectile logic class to handle spirit projectile behavior
 public class SpiritProjectileLogic : MonoBehaviour
 {
-    private Vector2 direction;
-    private float speed;
-    private float lifetime;
-    private float damage;
-    private string targetTag;
-    private float spawnTime;
-    private bool hasHit = false;
+    private Vector2 _direction;
+    private float _damage;
+    private string _targetTag;
+    private bool _hasHit;
 
     public void Initialize(Vector2 moveDirection, float moveSpeed, float projectileLifetime, float projectileDamage, string playerTag)
     {
-        direction = moveDirection.normalized;
-        speed = moveSpeed;
-        lifetime = projectileLifetime;
-        damage = projectileDamage;
-        targetTag = playerTag;
-        spawnTime = Time.time;
+        _direction = moveDirection.normalized;
+        _damage = projectileDamage;
+        _targetTag = playerTag;
 
-        // Destroy after lifetime
-        Destroy(gameObject, lifetime);
-    }
-
-    void Update()
-    {
-        // Fade out near end of lifetime
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
+        if (TryGetComponent<Rigidbody2D>(out var rb))
         {
-            float timeRemaining = lifetime - (Time.time - spawnTime);
-            if (timeRemaining < 1f)
-            {
-                Color color = spriteRenderer.color;
-                color.a = timeRemaining;
-                spriteRenderer.color = color;
-            }
+            rb.velocity = _direction * moveSpeed;
         }
+
+        Destroy(gameObject, projectileLifetime);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (hasHit) return;
+        if (_hasHit) return;
 
-        // Check if hit player using tag
-        if (other.CompareTag(targetTag))
+        if (other.CompareTag(_targetTag))
         {
-            // Try to damage player
-            PlayerController2D player = other.GetComponent<PlayerController2D>();
-            if (player != null)
+            _hasHit = true;
+            if (other.TryGetComponent<PlayerController2D>(out var player))
             {
                 DamagePlayer(player);
             }
-
-            // Alternative: Try generic health component
-            Health playerHealth = other.GetComponent<Health>();
-            if (playerHealth != null)
+            else if (other.TryGetComponent<Health>(out var health))
             {
-                playerHealth.TakeDamage(damage);
+                health.TakeDamage(_damage);
             }
-
-            hasHit = true;
-            CreateHitEffect();
             DestroyProjectile();
         }
-        // Hit solid objects (walls, terrain, etc.) - avoid hitting spirits
         else if (!other.CompareTag("Spirit") && other.gameObject.layer != gameObject.layer)
         {
-            hasHit = true;
-            CreateHitEffect();
+            _hasHit = true;
             DestroyProjectile();
         }
     }
 
     void DamagePlayer(PlayerController2D player)
     {
-        // Apply knockback
-        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-        if (playerRb != null)
+        if (player.TryGetComponent<Rigidbody2D>(out var playerRb))
         {
-            Vector2 knockbackDirection = direction;
-            float knockbackForce = 5f;
-            playerRb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
+            playerRb.AddForce(_direction * 5f, ForceMode2D.Impulse);
         }
 
-        // Play hit sound
-        if (AudioManager.Instance != null)
+        if (AudioManager.instance != null)
         {
-            AudioManager.Instance.PlaySFX("human hurt");
-        }
-
-        Debug.Log("Player hit by spirit projectile!");
-    }
-
-    void CreateHitEffect()
-    {
-        // Play hit sound
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySFX("ProjectileHit");
+            AudioManager.instance.PlaySfx("human hurt");
         }
     }
 
     void DestroyProjectile()
     {
-        // Stop any trail effects
-        TrailRenderer trailRenderer = GetComponent<TrailRenderer>();
-        if (trailRenderer != null)
+        if (TryGetComponent<TrailRenderer>(out var trail))
         {
-            trailRenderer.enabled = false;
+            trail.enabled = false;
         }
-
-        // Stop particles
-        ParticleSystem particles = GetComponent<ParticleSystem>();
-        if (particles != null)
+        if (TryGetComponent<ParticleSystem>(out var particles))
         {
             particles.Stop();
         }
-
-        // Destroy the game object
         Destroy(gameObject);
     }
 }
