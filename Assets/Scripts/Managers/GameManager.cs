@@ -146,7 +146,11 @@ public class GameManager : MonoBehaviour
         if (AudioManager.instance)
         {
             AudioManager.instance.PlayMusic(AudioManager.instance.undeadMusic);
-            AudioManager.instance.PlaySfx("human drown");
+        }
+        
+        if (SFXManager.instance != null)
+        {
+            SFXManager.instance.PlaySfx("human drown");
         }
         //TODO:spawn bot
         DestroyAllSpirits();

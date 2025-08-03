@@ -122,6 +122,56 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &87059374
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 87059376}
+  - component: {fileID: 87059375}
+  m_Layer: 0
+  m_Name: sfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &87059375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87059374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c43802a08f578442f853fe215e14a8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  masterVolume: 1
+  shotgunSFX: {fileID: 8300000, guid: 89ac2a79b6041403bba9e53f1e619f1f, type: 3}
+  humanHurtSFX: {fileID: 8300000, guid: b959af4c1bc6942b18a56ea0e2b87b76, type: 3}
+  humanDrownSFX: {fileID: 8300000, guid: 02748aa59ef4e4c09a059c63334033ae, type: 3}
+  spiritAttackSFX: {fileID: 8300000, guid: a8202ee5117ac4868b2a294b91dedb90, type: 3}
+  audioSourcePoolSize: 10
+--- !u!4 &87059376
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87059374}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.3531137, y: -6.541807, z: 0.6983692}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &262031268
 GameObject:
   m_ObjectHideFlags: 0
@@ -2292,3 +2342,4 @@ SceneRoots:
   - {fileID: 1445385960}
   - {fileID: 1641109588}
   - {fileID: 262031269}
+  - {fileID: 87059376}

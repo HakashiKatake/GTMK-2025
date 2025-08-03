@@ -58,9 +58,9 @@ public class Health : MonoBehaviour
         StartCoroutine(DamageFlash());
 
        
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("human hurt");
+            SFXManager.instance.PlaySfx("human hurt");
         }
 
      

@@ -169,9 +169,9 @@ public class SpiritPlayer : MonoBehaviour
         projLogic.Initialize(direction, projectileSpeed, projectileLifetime, projectileDamage, targetTag);
 
         // Play attack sound
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("spirit attack");
+            SFXManager.instance.PlaySfx("spirit attack");
         }
     }
 

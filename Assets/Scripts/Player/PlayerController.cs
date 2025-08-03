@@ -178,9 +178,9 @@ public class PlayerController2D : MonoBehaviour
 
     void FireShotgun()
     {
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("shotgun");
+            SFXManager.instance.PlaySfx("shotgun");
         }
         
         for (int i = 0; i < pelletCount; i++)
@@ -221,9 +221,9 @@ public class PlayerController2D : MonoBehaviour
         }
         
         if (!(other.CompareTag("Spirit") || other.CompareTag("Projectile")))return;
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("human hurt");
+            SFXManager.instance.PlaySfx("human hurt");
         }
         
         // Take damage from spirits or projectiles
@@ -239,9 +239,9 @@ public class PlayerController2D : MonoBehaviour
     void RestartScene()
     {
         // Play drowning sound if available
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("human drown");
+            SFXManager.instance.PlaySfx("human drown");
         }
         
         // Restart the current scene

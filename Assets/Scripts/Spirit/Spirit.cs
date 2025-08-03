@@ -226,9 +226,9 @@ public class Spirit : MonoBehaviour
     {
         if (projectilePrefab == null || _player == null) return;
         
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("spirit attack");
+            SFXManager.instance.PlaySfx("spirit attack");
         }
         
         Vector2 direction = (_player.position - firePoint.position).normalized;
@@ -349,9 +349,9 @@ public class SpiritProjectileLogic : MonoBehaviour
             playerRb.AddForce(_direction * 5f, ForceMode2D.Impulse);
         }
 
-        if (AudioManager.instance != null)
+        if (SFXManager.instance != null)
         {
-            AudioManager.instance.PlaySfx("human hurt");
+            SFXManager.instance.PlaySfx("human hurt");
         }
     }
 
