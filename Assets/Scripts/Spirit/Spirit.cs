@@ -4,7 +4,7 @@ public class Spirit : MonoBehaviour
 {
     [Header("Spirit Behavior")]
     public float moveSpeed = 3f;
-    public float attackRange = 2f;  // Much smaller - spirit gets very close before chasing
+    public float attackRange = 0.1f;  // Extremely small - spirit will collide with player
     public float detectionRange = 12f;
     public string playerTag = "Player";
 
@@ -51,18 +51,17 @@ public class Spirit : MonoBehaviour
         _rb = GetComponent<Rigidbody2D>();
         _startPosition = transform.position;
         
-        // Only find player and initialize if we're in battle state
-        if (GameManager.instance.GetCurrentState() == GameManager.GameState.Battle)
+        // Always try to find player when spirit starts
+        GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+        if (playerObject != null)
+            _player = playerObject.transform;
+        
+        // If no player found, try alternative tags
+        if (_player == null)
         {
-            GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+            playerObject = GameObject.FindGameObjectWithTag("Bot");
             if (playerObject != null)
                 _player = playerObject.transform;
-        }
-        else
-        {
-            enabled = false;
-            if (spriteRenderer != null)
-                spriteRenderer.enabled = false;
         }
 
         ChangeWanderDirection();
@@ -82,38 +81,53 @@ public class Spirit : MonoBehaviour
 
     void OnEnable()
     {
-        if (GameManager.instance.GetCurrentState() != GameManager.GameState.Battle)
-        {
-            enabled = false;
-            if (spriteRenderer != null)
-                spriteRenderer.enabled = false;
-            return;
-        }
-
         if (_rb == null)
             _rb = GetComponent<Rigidbody2D>();
             
         _startPosition = transform.position;
         _currentState = SpiritState.Wandering;
         
+        // Always try to find player when enabled
         GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
         if (playerObject != null)
             _player = playerObject.transform;
+            
+        // If no player found, try alternative tags
+        if (_player == null)
+        {
+            playerObject = GameObject.FindGameObjectWithTag("Bot");
+            if (playerObject != null)
+                _player = playerObject.transform;
+        }
     }
 
     void Update()
     {
-        if (GameManager.instance.GetCurrentState() == GameManager.GameState.Battle)
-        {
-            CheckPlayerDistance();
-            UpdateState();
-            HandleMovement();
-            HandleAttacking();
-        }
+        // Always update spirit behavior when active
+        CheckPlayerDistance();
+        UpdateState();
+        HandleMovement();
+        HandleAttacking();
     }
 
     void CheckPlayerDistance()
     {
+        // Refresh player reference if lost
+        if (_player == null)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+            if (playerObject != null)
+                _player = playerObject.transform;
+            
+            // Try Bot tag if Player not found
+            if (_player == null)
+            {
+                playerObject = GameObject.FindGameObjectWithTag("Bot");
+                if (playerObject != null)
+                    _player = playerObject.transform;
+            }
+        }
+        
         if (_player == null) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, _player.position);
@@ -152,8 +166,8 @@ public class Spirit : MonoBehaviour
                 if (_player != null)
                 {
                     Vector2 directionToPlayer = (_player.position - transform.position).normalized;
-                    // Move slower while shooting to maintain distance and accuracy
-                    _rb.velocity = directionToPlayer * (moveSpeed * 0.6f);
+                    // Move at moderate speed while shooting
+                    _rb.velocity = directionToPlayer * (moveSpeed * 0.5f);
                 }
                 break;
 
@@ -162,8 +176,8 @@ public class Spirit : MonoBehaviour
                 if (_player != null)
                 {
                     Vector2 directionToPlayer = (_player.position - transform.position).normalized;
-                    // Move faster when chasing up close
-                    _rb.velocity = directionToPlayer * (moveSpeed * 1.2f);
+                    // Move at good speed when chasing to collide with player
+                    _rb.velocity = directionToPlayer * (moveSpeed * 0.8f);
                 }
                 break;
         }
@@ -176,20 +190,24 @@ public class Spirit : MonoBehaviour
 
         if (_currentState == SpiritState.Wandering)
         {
+            // Simple wandering - move towards a point around start position
             Vector2 targetPosition = _startPosition + (Vector3)_wanderDirection * wanderRadius;
             Vector2 direction = (targetPosition - (Vector2)transform.position).normalized;
             
-            _rb.velocity = new Vector2(direction.x * moveSpeed, direction.y * moveSpeed);
+            _rb.velocity = new Vector2(direction.x * moveSpeed * 0.5f, direction.y * moveSpeed * 0.5f);
             
             if (Vector2.Distance(transform.position, targetPosition) < 1f)
             {
                 ChangeWanderDirection();
             }
+            
+            // Apply floating effect only when wandering
+            Vector3 currentPos = transform.position;
+            currentPos.y += floatY * Time.deltaTime * 0.3f;
+            transform.position = currentPos;
         }
-
-        Vector3 currentPos = transform.position;
-        currentPos.y = _startPosition.y + floatY;
-        transform.position = currentPos;
+        // For Attacking and Chasing states, movement is handled in UpdateState()
+        // No floating effect during combat to ensure precise movement towards player
     }
 
     void HandleAttacking()

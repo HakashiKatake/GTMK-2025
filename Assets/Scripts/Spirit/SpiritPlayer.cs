@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SpiritPlayer : MonoBehaviour
 {
@@ -287,6 +288,19 @@ public class SpiritPlayer : MonoBehaviour
     public GameObject GetNearbyTarget()
     {
         return nearbyTarget;
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        // Spirit players can take damage from pellets
+        if (other.CompareTag("Pellet"))
+        {
+            Health health = GetComponent<Health>();
+            if (health != null)
+            {
+                health.TakeDamage(1f);
+            }
+        }
     }
 
     // Gizmos for debugging

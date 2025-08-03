@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Bot : MonoBehaviour
 {
@@ -391,14 +392,40 @@ public class Bot : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        // Check for water layer - restart scene if bot touches water
+        if (other.gameObject.layer == LayerMask.NameToLayer("Water"))
+        {
+            RestartScene();
+            return;
+        }
+        
         // Play hit sound when getting hit
-        if (other.CompareTag("Spirit") || other.CompareTag("SpiritProjectile"))
+        if (other.CompareTag("Spirit") || other.CompareTag("Projectile"))
         {
             if (AudioManager.instance != null)
             {
                 AudioManager.instance.PlaySfx("human hurt");
             }
+            
+            // Take damage from spirits or projectiles
+            Health health = GetComponent<Health>();
+            if (health != null)
+            {
+                health.TakeDamage(1f);
+            }
         }
+    }
+
+    void RestartScene()
+    {
+        // Play drowning sound if available
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlaySfx("human drown");
+        }
+        
+        // Restart the current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     // Public methods for external control

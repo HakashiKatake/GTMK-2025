@@ -8,26 +8,30 @@ public class StatusManager : MonoBehaviour
     public float intermissionAmount = 60f;
     public float spiritFightDuration = 300f;
     public float playerFightDuration = 300f;
-    
+
     [Header("Game Objects")]
     public GameObject spiritPrefab;
     public GameObject playerObject;
     public GameObject spiritObject;
     public GameObject playerBot;
-    
+
     [Header("Spawn Settings")]
-    public Camera mainCamera;
     public float spawnDistance = 20f;
-    
+
+    private Camera mainCamera;
     private List<GameObject> spawnedSpirits = new List<GameObject>();
     private Coroutine currentSequence;
     private bool isPlayerFight = false;
-    
+
     void Start()
     {
+        mainCamera = Camera.main;
+        if (mainCamera == null)
+            mainCamera = FindObjectOfType<Camera>();
+
         StartCoroutine(GameLoop());
     }
-    
+
     IEnumerator GameLoop()
     {
         while (true)
@@ -36,19 +40,19 @@ public class StatusManager : MonoBehaviour
             yield return StartCoroutine(SpiritFightPhase());
         }
     }
-    
+
     IEnumerator IntermissionPhase()
     {
         playerBot.SetActive(false);
         yield return new WaitForSeconds(intermissionAmount);
     }
-    
+
     IEnumerator SpiritFightPhase()
     {
         isPlayerFight = false;
         playerBot.SetActive(false);
         StartCoroutine(SpawnSpirits());
-        
+
         float timer = 0f;
         while (timer < spiritFightDuration)
         {
@@ -58,11 +62,11 @@ public class StatusManager : MonoBehaviour
                 yield return StartCoroutine(PlayerFightPhase());
                 yield break;
             }
-            
+
             timer += Time.deltaTime;
             yield return null;
         }
-        
+
         if (playerObject.activeInHierarchy)
         {
             playerObject.SetActive(false);
@@ -70,13 +74,13 @@ public class StatusManager : MonoBehaviour
             yield return StartCoroutine(PlayerFightPhase());
         }
     }
-    
+
     IEnumerator PlayerFightPhase()
     {
         isPlayerFight = true;
         playerBot.SetActive(true);
         DestroyAllSpirits();
-        
+
         float timer = 0f;
         while (timer < playerFightDuration)
         {
@@ -85,18 +89,18 @@ public class StatusManager : MonoBehaviour
                 SwapToPlayer();
                 yield break;
             }
-            
+
             timer += Time.deltaTime;
             yield return null;
         }
-        
+
         if (spiritObject.activeInHierarchy)
         {
             spiritObject.SetActive(false);
             SwapToPlayer();
         }
     }
-    
+
     IEnumerator SpawnSpirits()
     {
         while (!isPlayerFight)
@@ -105,14 +109,14 @@ public class StatusManager : MonoBehaviour
             yield return new WaitForSeconds(Random.Range(5f, 15f));
         }
     }
-    
+
     void SpawnSpiritRandomly()
     {
         Vector3 spawnPos = GetRandomSpawnPosition();
         GameObject spirit = Instantiate(spiritPrefab, spawnPos, Quaternion.identity);
         spawnedSpirits.Add(spirit);
     }
-    
+
     Vector3 GetRandomSpawnPosition()
     {
         Vector3 cameraPos = mainCamera.transform.position;
@@ -120,21 +124,21 @@ public class StatusManager : MonoBehaviour
         Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * spawnDistance;
         return cameraPos + offset;
     }
-    
+
     void SwapToSpirit()
     {
         Vector3 playerPos = playerObject.transform.position;
         spiritObject.transform.position = playerPos;
         spiritObject.SetActive(true);
     }
-    
+
     void SwapToPlayer()
     {
         Vector3 spiritPos = spiritObject.transform.position;
         playerObject.transform.position = spiritPos;
         playerObject.SetActive(true);
     }
-    
+
     void DestroyAllSpirits()
     {
         foreach (GameObject spirit in spawnedSpirits)

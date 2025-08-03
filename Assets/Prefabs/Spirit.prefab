@@ -183,7 +183,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 4
+  m_Constraints: 6
 --- !u!95 &9055860665266097307
 Animator:
   serializedVersion: 5
@@ -226,7 +226,7 @@ MonoBehaviour:
   fireRate: 1
   projectileSpeed: 6
   projectileLifetime: 5
-  projectileDamage: 1
+  projectileDamage: 5
   floatAmplitude: 0.5
   floatFrequency: 1
   wanderRadius: 5
@@ -246,7 +246,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ab11637ea26a4197914ffd45672a3ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 20
+  maxHealth: 30
   currentHealth: 0
   destroyOnDeath: 0
   invulnerabilityTime: 1

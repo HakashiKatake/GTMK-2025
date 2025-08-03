@@ -29,14 +29,16 @@ public class PelletCollision : MonoBehaviour
             Health spiritHealth = other.GetComponent<Health>();
             if (spiritHealth != null)
             {
-                spiritHealth.TakeDamage(1f);
+                spiritHealth.TakeDamage(5f);
             }
             
             // Destroy pellet
             Destroy(gameObject);
         }
         // 2. If pellet hits spirit projectile -> both destroy
-        else if (other.gameObject.name.Contains("Projectile") || other.GetComponent<SpiritProjectileLogic>() != null)
+        else if (other.gameObject.name.Contains("Projectile") || 
+                 other.GetComponent<SpiritProjectileLogic>() != null)
+                 
         {
             // Destroy the spirit projectile
             Destroy(other.gameObject);
@@ -47,7 +49,7 @@ public class PelletCollision : MonoBehaviour
         else if (!other.CompareTag("Player") && !other.CompareTag("Bot") && other.gameObject.layer != gameObject.layer)
         {
             // Only destroy if it's a solid object (has a non-trigger collider or specific tags)
-            if (!other.isTrigger || other.CompareTag("Wall") || other.CompareTag("Ground"))
+            if (!other.isTrigger)
             {
                 Destroy(gameObject);
             }

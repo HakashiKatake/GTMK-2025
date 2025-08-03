@@ -325,9 +325,9 @@ MonoBehaviour:
   ambienceSource: {fileID: 0}
   sounds: []
   fishingMusic: {fileID: 0}
-  battleMusic: {fileID: 0}
-  undeadMusic: {fileID: 0}
-  ambienceSound: {fileID: 0}
+  battleMusic: {fileID: 8300000, guid: d03b07062aaf341beac6ab27a9fcf630, type: 3}
+  undeadMusic: {fileID: 8300000, guid: d41046b750ae24207b106ef122b04224, type: 3}
+  ambienceSound: {fileID: 8300000, guid: a77f602084c364dd6adaca2ff4183b08, type: 3}
   musicVolume: 0.7
   sfxVolume: 1
   ambienceVolume: 0.5
@@ -356,7 +356,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: c42b5b145a9a74edd8f4e34c87a97fc3, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController2D : MonoBehaviour
 {
@@ -212,11 +213,38 @@ public class PlayerController2D : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (!(other.CompareTag("Spirit") || other.CompareTag("SpiritProjectile")))return;
+        // Check for water layer - restart scene if player touches water
+        if (other.gameObject.layer == LayerMask.NameToLayer("Water"))
+        {
+            RestartScene();
+            return;
+        }
+        
+        if (!(other.CompareTag("Spirit") || other.CompareTag("Projectile")))return;
         if (AudioManager.instance != null)
         {
             AudioManager.instance.PlaySfx("human hurt");
         }
+        
+        // Take damage from spirits or projectiles
+        Health health = GetComponent<Health>();
+        if (health != null)
+        {
+            health.TakeDamage(1f);
+        }
+        
         if (other.gameObject.CompareTag("Spirit"))GameManager.instance.SwitchToUndead();
+    }
+
+    void RestartScene()
+    {
+        // Play drowning sound if available
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlaySfx("human drown");
+        }
+        
+        // Restart the current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
